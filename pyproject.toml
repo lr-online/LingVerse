@@ -6,6 +6,10 @@ authors = ["liangrui <liangrui.online@gmail.com>"]
 license = "GPL-3.0"
 readme = "README.md"
 package-mode = false
+packages = [
+    { include = "app" },
+    { include = "scripts" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -19,7 +23,18 @@ isort = "^5.13.2"
 
 [tool.poetry.scripts]
 lingverse = "app.main:app"
+format = "scripts.format:main"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
