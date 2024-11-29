@@ -1,7 +1,9 @@
 from typing import Any, List, Optional, Union
+
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from app.utils.logger import get_logger
+
 from app.utils.config import get_settings
+from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -22,7 +24,7 @@ class MongoDBSDK:
                 host=mongo_config.host,
                 port=mongo_config.port,
                 username=mongo_config.username,
-                password=mongo_config.password
+                password=mongo_config.password,
             )
 
             # 初始化客户端

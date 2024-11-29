@@ -12,9 +12,7 @@ class MongoDBSettings(BaseModel):
     password: Optional[str] = None
     database: str = "lingverse"
 
-    model_config = SettingsConfigDict(
-        env_prefix="MONGODB_"
-    )
+    model_config = SettingsConfigDict(env_prefix="MONGODB_")
 
 
 class RedisSettings(BaseModel):
@@ -22,9 +20,7 @@ class RedisSettings(BaseModel):
     port: int = 6379
     password: Optional[str] = None
 
-    model_config = SettingsConfigDict(
-        env_prefix="REDIS_"
-    )
+    model_config = SettingsConfigDict(env_prefix="REDIS_")
 
 
 class ElasticsearchSettings(BaseModel):
@@ -33,20 +29,18 @@ class ElasticsearchSettings(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
 
-    model_config = SettingsConfigDict(
-        env_prefix="ELASTICSEARCH_"
-    )
+    model_config = SettingsConfigDict(env_prefix="ELASTICSEARCH_")
 
 
 class Settings(BaseSettings):
     """应用配置"""
-    
+
     # MongoDB 配置
     mongodb: MongoDBSettings = MongoDBSettings()
-    
+
     # Redis 配置
     redis: RedisSettings = RedisSettings()
-    
+
     # Elasticsearch 配置
     elasticsearch: ElasticsearchSettings = ElasticsearchSettings()
 
@@ -68,4 +62,4 @@ if __name__ == "__main__":
     settings = get_settings()
     print(f"MongoDB settings: {settings.mongodb}")
     print(f"Redis settings: {settings.redis}")
-    print(f"Elasticsearch settings: {settings.elasticsearch}") 
+    print(f"Elasticsearch settings: {settings.elasticsearch}")

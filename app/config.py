@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class MongoDBSettings(BaseModel):
     host: str = "localhost"
     port: int = 27017
-    username: Optional[str] = None 
+    username: Optional[str] = None
     password: Optional[str] = None
     database: str = "lingverse"
 
@@ -20,7 +20,7 @@ class RedisSettings(BaseModel):
 
 
 class ElasticsearchSettings(BaseModel):
-    host: str = "localhost" 
+    host: str = "localhost"
     port: int = 9200
     username: Optional[str] = None
     password: Optional[str] = None
@@ -28,6 +28,7 @@ class ElasticsearchSettings(BaseModel):
 
 class Settings(BaseSettings):
     """应用配置"""
+
     mongodb: MongoDBSettings = MongoDBSettings()
     redis: RedisSettings = RedisSettings()
     elasticsearch: ElasticsearchSettings = ElasticsearchSettings()
