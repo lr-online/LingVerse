@@ -7,4 +7,4 @@ def main():
     # 运行 black
     subprocess.run(["black", "."], check=True)
     # 显示 git diff
-    subprocess.run(["git", "diff", "origin/main"], check=True)
+    subprocess.run(["git", "diff"], check=True)
