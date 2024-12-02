@@ -2,6 +2,7 @@ import uuid
 from typing import Optional
 
 from pydantic import Field
+from pydantic.v1 import validator
 
 from app.models.base import MongoBaseModel
 from app.utils.logger import get_logger
@@ -48,6 +49,24 @@ class Person(MongoBaseModel):
                 "is_deleted": False,
             }
         }
+
+    @validator("role")
+    def validate_role(cls, value):
+        if value not in {"admin", "human", "ai"}:
+            raise ValueError("角色必须是 'admin', 'human' 或 'ai'")
+        return value
+
+    @validator("language_preference")
+    def validate_language_preference(cls, value):
+        if value not in {"chinese", "english", "japanese"}:
+            raise ValueError("语言偏好必须是 'chinese', 'english' 或 'japanese'")
+        return value
+
+    @validator("gender")
+    def validate_gender(cls, value):
+        if value not in {"男", "女"}:
+            raise ValueError("性别必须是 '男' 或 '女'")
+        return value
 
 
 if __name__ == "__main__":
