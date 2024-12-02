@@ -23,7 +23,7 @@ logger.add(
     "<blue>{level}</blue> | "
     "<magenta>{extra[request_id]}</magenta> | "
     "{message}",
-    level="INFO",
+    level="DEBUG",
     filter=request_id_filter,
 )
 

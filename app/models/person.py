@@ -5,6 +5,7 @@ from pydantic import Field
 from pydantic.v1 import validator
 
 from app.models.base import MongoBaseModel
+from app.utils.config import get_settings
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -68,23 +69,23 @@ class Person(MongoBaseModel):
             raise ValueError("性别必须是 '男' 或 '女'")
         return value
 
+    @classmethod
+    async def setup(cls):
+        admin_cfg = get_settings().admin
+
+        if await cls.get_by_single_field("role", "admin"):
+            logger.warning("Admin user already exists, skip creating")
+            return
+        await cls.create(
+            name=admin_cfg.user,
+            email=admin_cfg.email,
+            phone=admin_cfg.phone,
+            access_token=admin_cfg.token,
+            role="admin",
+        )
+
 
 if __name__ == "__main__":
     import asyncio
 
-    async def create_person():
-        # 创建一个人物实例
-        await Person.create(
-            name="女娲",
-            gender="女",
-            birthday="1990-01-01",
-            email="",
-            phone="18888888888",
-            access_token="abc123",
-            avatar_url="https://www.example.com/avatar.jpg",
-            role="admin",
-            address="北京市朝阳区",
-            language_preference="chinese",
-        )
-
-        asyncio.run(create_person())
+    asyncio.run(Person.setup())

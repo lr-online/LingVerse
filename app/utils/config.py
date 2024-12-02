@@ -1,8 +1,20 @@
+import os
 from functools import lru_cache
 from typing import Optional
 
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+class AdminSettings(BaseModel):
+    user: str = "admin"
+    token: str = "your-token"
+    phone: str = "your-phone"
+    email: str = "your-email"
+
+    model_config = SettingsConfigDict(env_prefix="ADMIN_")
 
 
 class MongoDBSettings(BaseModel):
@@ -35,6 +47,9 @@ class ElasticsearchSettings(BaseModel):
 class Settings(BaseSettings):
     """应用配置"""
 
+    # Admin 配置
+    admin: AdminSettings = AdminSettings()
+
     # MongoDB 配置
     mongodb: MongoDBSettings = MongoDBSettings()
 
@@ -45,7 +60,7 @@ class Settings(BaseSettings):
     elasticsearch: ElasticsearchSettings = ElasticsearchSettings()
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=os.path.join(BASE_PATH, ".env"),
         env_file_encoding="utf-8",
         env_nested_delimiter="_",  # 修改分隔符为下划线
         case_sensitive=False,
@@ -63,3 +78,4 @@ if __name__ == "__main__":
     print(f"MongoDB settings: {settings.mongodb}")
     print(f"Redis settings: {settings.redis}")
     print(f"Elasticsearch settings: {settings.elasticsearch}")
+    print(f"ADMIN settings: {settings.admin}")
