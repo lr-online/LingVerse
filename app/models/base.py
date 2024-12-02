@@ -189,7 +189,7 @@ class MongoBaseModel(PydanticBaseModel):
             data["updated_at"] = get_china_now()
             result = await cls.collection().update_one(filter_dict, {"$set": data})
             logger.debug(
-                f"Updated document by field in {cls.collection_name()}: {filter_dict}"
+                f"Updated document by field in {cls.collection_name()}: {result}"
             )
             return result.modified_count > 0
         except Exception as e:

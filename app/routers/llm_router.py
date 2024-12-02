@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Path
+from openai import AsyncOpenAI
 
 from app.models.llm_model import LLM
 from app.utils.api_response import ResponseModel
@@ -39,19 +40,29 @@ async def get_llm(llm_name: str = Path(..., description="大语言模型名称")
     )
 
 
-@router.post("")
-async def create_llm(llm: LLM):
-    """创建大语言模型"""
-    return HTTPException(status_code=403, detail="LLM creation is disabled")
+@router.post("/sync", response_model=ResponseModel)
+async def sync_llm_models():
+    """同步大语言模型列表"""
+    oai_client = AsyncOpenAI()
 
+    try:
+        model_list = await oai_client.models.list()
+        for model in model_list.data:
+            await LLM.create(
+                model_name=model.id,
+                provider=model.owned_by,
+                api_key=oai_client.api_key,
+                base_url=str(oai_client.base_url),
+            )
 
-@router.put("/{llm_name}")
-async def update_llm(llm_name: str = Path(..., description="大语言模型名称")):
-    """更新大语言模型"""
-    return HTTPException(status_code=403, detail="LLM creation is disabled")
-
-
-@router.delete("/{llm_name}")
-async def delete_llm(llm_name: str = Path(..., description="大语言模型名称")):
-    """删除大语言模型"""
-    return HTTPException(status_code=403, detail="LLM creation is disabled")
+        latest_model_list = [model.id for model in model_list.data]
+        await LLM.update_by_field(
+            {"model_name": {"$nin": latest_model_list}}, {"is_deleted": True}
+        )
+        return ResponseModel(
+            success=True,
+            data={},
+            message="LLM models synchronized successfully",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
