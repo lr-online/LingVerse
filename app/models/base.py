@@ -58,7 +58,9 @@ class MongoBaseModel(PydanticBaseModel):
         try:
             # 确保更新时间戳
             new_record = cls(**kwargs)
-            record_id = await cls.collection().insert_one(new_record.model_dump(exclude={"id"}))
+            record_id = await cls.collection().insert_one(
+                new_record.model_dump(exclude={"id"})
+            )
             new_record.id = str(record_id.inserted_id)
 
             logger.debug(f"Created document in {cls.collection_name()}: {record_id}")
@@ -115,7 +117,9 @@ class MongoBaseModel(PydanticBaseModel):
             raise
 
     @classmethod
-    async def get_by_multi_field(cls: Type[T], filter_dict: Dict[str, Any]) -> Optional[T]:
+    async def get_by_multi_field(
+        cls: Type[T], filter_dict: Dict[str, Any]
+    ) -> Optional[T]:
         """
         通过多个字段获取文档
 
@@ -182,10 +186,14 @@ class MongoBaseModel(PydanticBaseModel):
             filter_dict["is_deleted"] = False
             data["updated_at"] = get_china_now()
             result = await cls.collection().update_one(filter_dict, {"$set": data})
-            logger.debug(f"Updated document by field in {cls.collection_name()}: {filter_dict}")
+            logger.debug(
+                f"Updated document by field in {cls.collection_name()}: {filter_dict}"
+            )
             return result.modified_count > 0
         except Exception as e:
-            logger.error(f"Failed to update document by field in {cls.collection_name()}: {e}")
+            logger.error(
+                f"Failed to update document by field in {cls.collection_name()}: {e}"
+            )
             raise
 
     async def delete(self) -> bool:

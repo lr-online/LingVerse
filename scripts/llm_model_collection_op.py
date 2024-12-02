@@ -22,13 +22,9 @@ async def update_llm_model_collection():
 
     latest_model_list = [model.id for model in model_list.data]
     await LLM.update_by_field(
-        {
-            "model_name": {"$nin": latest_model_list}
-        },
-        {"is_deleted": True}
+        {"model_name": {"$nin": latest_model_list}}, {"is_deleted": True}
     )
     logger.info("更新大语言模型集合成功")
-
 
 
 async def dump_llm_model_collection():
@@ -39,8 +35,7 @@ async def dump_llm_model_collection():
     logger.info(f"导出大语言模型集合成功: {model_list}")
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     import asyncio
 
     loop = asyncio.new_event_loop()

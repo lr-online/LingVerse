@@ -12,5 +12,6 @@ def to_china_timezone(dt: datetime) -> datetime:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone(timedelta(hours=8)))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     print(get_china_now())

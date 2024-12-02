@@ -21,29 +21,35 @@ class LLM(MongoBaseModel):
             "example": {
                 "id": "1234567890",
                 "model_name": "gpt-4",
-                "provider": "openai",
-                "created_at": "2024-01-01 00:00:00",
-                "updated_at": "2024-01-01 00:00:00",
+                "provider": "OpenAI",
+                "api_key": "abc123",
+                "base_url": "https://api.openai.com/v1",
+                "created_at": "2022-01-01T00:00:00",
+                "updated_at": "2022-01-01T00:00:00",
                 "is_deleted": False,
             }
         }
 
     @classmethod
-    async def create(cls, model_name: str, provider: str, api_key: str, base_url: str) -> "LLM":
+    async def create(
+        cls, model_name: str, provider: str, api_key: str, base_url: str
+    ) -> "LLM":
         # 检查模型是否存在
         record = await cls.get_by_multi_field(
             {
                 "model_name": model_name,
                 "provider": provider,
                 "api_key": api_key,
-                "base_url": base_url
+                "base_url": base_url,
             }
         )
         if record:
             logger.warning(f"模型 {model_name} 已存在")
             return record
 
-        return await super().create(model_name=model_name, provider=provider, api_key=api_key, base_url=base_url)
+        return await super().create(
+            model_name=model_name, provider=provider, api_key=api_key, base_url=base_url
+        )
 
     @classmethod
     async def update_by_id(cls, id: str, **kwargs) -> bool:
@@ -58,4 +64,3 @@ class LLM(MongoBaseModel):
         else:
             logger.warning("LLM 不支持更新字段, 屏蔽此次更新")
             return False
-
