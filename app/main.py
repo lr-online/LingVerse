@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyHeader
 from starlette.middleware.exceptions import ExceptionMiddleware
 
 from app.middlewares.auth import AuthMiddleware
@@ -14,7 +16,64 @@ from app.routers.memory_router import router as memory_router
 from app.routers.person_router import router as person_router
 from app.routers.tool_router import router as tool_router
 
-app = FastAPI()
+# 定义安全方案
+api_key_header = APIKeyHeader(name="Authorization", auto_error=False)
+
+app = FastAPI(
+    title="LingVerse API",
+    description="LingVerse API documentation",
+    version="1.0.0",
+    # 添加安全方案配置
+    openapi_tags=[
+        {"name": "LLMs", "description": "Large Language Model operations"},
+        {"name": "Memories", "description": "Memory operations"},
+        {"name": "Persons", "description": "Person operations"},
+        {"name": "Tools", "description": "Tool operations"},
+        {"name": "conversations", "description": "Conversation operations"},
+    ],
+    swagger_ui_parameters={"defaultModelsExpandDepth": -1},
+)
+
+# 配置 OpenAPI 的安全方案
+app.add_middleware(AuthMiddleware)  # 确保在其他中间件之前添加
+
+app.swagger_ui_init_oauth = {
+    "usePkceWithAuthorizationCodeGrant": True,
+}
+
+# 添加安全定义
+app.openapi_schema = None  # 清除缓存的 schema
+
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+
+    # 添加安全方案
+    openapi_schema["components"]["securitySchemes"] = {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authorization",
+            "description": "Enter your API key",
+        }
+    }
+
+    # 应用安全要求到所有路由
+    openapi_schema["security"] = [{"ApiKeyAuth": []}]
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 # 异常处理器
@@ -43,7 +102,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(AuthMiddleware)  # 处理认证
 app.add_middleware(RequestIDMiddleware)  # 添加请求ID
 app.add_middleware(RequestTimerMiddleware)  # 记录所有请求
 app.add_middleware(

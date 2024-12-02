@@ -10,7 +10,11 @@ logger = get_logger(__name__)
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # 跳过根路径的认证
-        if request.url.path == "/":
+        if request.url.path in (
+            "/",
+            "/docs",
+            "/openapi.json",
+        ):
             return await call_next(request)
 
         # 获取 access_token
