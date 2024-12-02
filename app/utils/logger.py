@@ -1,50 +1,33 @@
 import sys
-from pathlib import Path
+from typing import Any, Dict
 
 from loguru import logger
 
-# 创建logs目录（如果不存在）
-log_dir = Path("logs")
-log_dir.mkdir(exist_ok=True)
+from app.utils.request_id import get_request_id
 
-# 移除默认的控制台处理器
+# 移除默认的处理器
 logger.remove()
 
-# 添加控制台处理器，设置日志级别为INFO
+
+def request_id_filter(record: Dict[str, Any]) -> bool:
+    """为每条日志记录添加请求ID"""
+    record["extra"]["request_id"] = get_request_id()
+    return True
+
+
+# 添加自定义格式的处理器
 logger.add(
     sys.stdout,
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-    level="DEBUG",
-)
-
-# 添加文件处理器，设置日志级别为DEBUG
-# 日志文件将按天进行切割，保留7天的历史记录
-logger.add(
-    "logs/app_{time:YYYY-MM-DD}.log",
-    rotation="00:00",  # 每天午夜切割
-    retention="7 days",  # 保留7天的日志
-    format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
-    level="DEBUG",
-    encoding="utf-8",
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+    "<blue>{level}</blue> | "
+    "<magenta>{extra[request_id]}</magenta> | "
+    "{message}",
+    level="INFO",
+    filter=request_id_filter,
 )
 
 
-def get_logger(name: str = "app"):
-    """
-    获取logger实例
-
-    Args:
-        name: 日志记录器的名称，默认为'app'
-
-    Returns:
-        loguru.logger 实例
-    """
+def get_logger(name: str):
+    """获取logger"""
     return logger.bind(name=name)
-
-
-# 导出logger实例，可以直接使用
-app_logger = get_logger()
-
-
-if __name__ == "__main__":
-    app_logger.info("This is a test log")
