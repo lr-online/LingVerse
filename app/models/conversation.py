@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 class Conversation(MongoBaseModel):
     """Conversation data model"""
 
-    name: str = Field("新回话", description="对话名称")
+    name: str = Field("新会话", description="对话名称")
     members: Optional[list[str]] = Field(None, description="对话成员")
 
     class Config:
