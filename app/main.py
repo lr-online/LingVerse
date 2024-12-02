@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from app.middlewares.request_id import RequestIDMiddleware
 from app.middlewares.request_timer import RequestTimerMiddleware
@@ -9,6 +11,13 @@ from app.routers.person_router import router as person_router
 from app.routers.tool_router import router as tool_router
 
 app = FastAPI()
+app.add_middleware(GZipMiddleware)
+app.add_middleware(CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(RequestTimerMiddleware)
 
