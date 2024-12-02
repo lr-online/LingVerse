@@ -58,12 +58,14 @@ class MongoBaseModel(PydanticBaseModel):
         try:
             # 确保更新时间戳
             new_record = cls(**kwargs)
-            record_id = await cls.collection().insert_one(
+            result = await cls.collection().insert_one(
                 new_record.model_dump(exclude={"id"})
             )
-            new_record.id = str(record_id.inserted_id)
+            new_record.id = str(result.inserted_id)
 
-            logger.debug(f"Created document in {cls.collection_name()}: {record_id}")
+            logger.debug(
+                f"Created document in {cls.collection_name()}: {new_record.id}"
+            )
             return new_record
         except Exception as e:
             logger.error(f"Failed to create document in {cls.collection_name()}: {e}")

@@ -21,7 +21,7 @@ class Person(MongoBaseModel):
     role: Optional[str] = Field("user", description="角色, 可选值: admin, user， ai")
     address: Optional[str] = Field(None, description="用户所在地址")
     language_preference: Optional[str] = Field(
-        "chinese", description="语言偏好, 可选值: chinese, english"
+        "chinese", description="语言偏好, 可选值: chinese, english, japanese"
     )
     description: Optional[str] = Field(None, description="描述")
 
@@ -48,4 +48,21 @@ class Person(MongoBaseModel):
 
 
 if __name__ == "__main__":
-    print(Person.model_json_schema())
+    import asyncio
+
+    async def create_person():
+        # 创建一个人物实例
+        await Person.create(
+            name="女娲",
+            gender="女",
+            birthday="1990-01-01",
+            email="",
+            phone="18888888888",
+            access_token="abc123",
+            avatar_url="https://www.example.com/avatar.jpg",
+            role="admin",
+            address="北京市朝阳区",
+            language_preference="chinese",
+        )
+
+        asyncio.run(create_person())
