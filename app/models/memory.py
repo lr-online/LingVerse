@@ -31,20 +31,6 @@ class Memory(MongoBaseModel):
             }
         }
 
-    @classmethod
-    async def create(cls, owner_id, title, content, creator_id, tags: list[str] = None):
-        owner = await Person.get_by_id(owner_id)
-        creator = await Person.get_by_id(creator_id)
-        assert owner, f"Owner {owner_id} not found"
-        assert creator, f"Creator {creator_id} not found"
-        return await super().create(
-            owner_id=owner_id,
-            title=title,
-            content=content,
-            creator_id=creator_id,
-            tags=tags,
-        )
-
 
 if __name__ == "__main__":
     import asyncio

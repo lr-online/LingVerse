@@ -247,7 +247,13 @@ class MongoBaseModel(PydanticBaseModel):
             filter_dict = filter_dict or {}
             filter_dict["is_deleted"] = False
 
-            cursor = cls.collection().find(filter_dict).skip(skip).limit(limit)
+            cursor = (
+                cls.collection()
+                .find(filter_dict)
+                .sort("_id", -1)
+                .skip(skip)
+                .limit(limit)
+            )
             documents = await cursor.to_list(length=None)
 
             # 转换ID为字符串
@@ -257,4 +263,28 @@ class MongoBaseModel(PydanticBaseModel):
             return [cls(**doc) for doc in documents]
         except Exception as e:
             logger.error(f"Failed to list documents from {cls.__name__}: {e}")
+            raise
+
+    @classmethod
+    async def delete_by_id(cls, id: str) -> bool:
+        """
+        通过ID删除文档
+
+        Args:
+            id: 文档ID
+
+        Returns:
+            bool: 删除是否成功
+        """
+        try:
+            result = await cls.collection().update_one(
+                {"_id": ObjectId(id), "is_deleted": False},
+                {"$set": {"is_deleted": True, "updated_at": get_china_now()}},
+            )
+            success = result.modified_count > 0
+            if success:
+                logger.debug(f"Deleted document from {cls.collection_name()}: {id}")
+            return success
+        except Exception as e:
+            logger.error(f"Failed to delete document from {cls.collection_name()}: {e}")
             raise

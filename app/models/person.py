@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional
 
 from pydantic import Field
@@ -16,9 +17,11 @@ class Person(MongoBaseModel):
     birthday: Optional[str] = Field(None, description="出生日期")
     email: Optional[str] = Field(None, description="邮箱")
     phone: Optional[str] = Field(None, description="电话号码")
-    access_token: Optional[str] = Field(None, description="访问令牌")
+    access_token: Optional[str] = Field(
+        default_factory=lambda: uuid.uuid4().hex, description="访问令牌"
+    )
     avatar_url: Optional[str] = Field(None, description="头像链接")
-    role: Optional[str] = Field("user", description="角色, 可选值: admin, user， ai")
+    role: Optional[str] = Field("human", description="角色, 可选值: admin, human，ai")
     address: Optional[str] = Field(None, description="用户所在地址")
     language_preference: Optional[str] = Field(
         "chinese", description="语言偏好, 可选值: chinese, english, japanese"
