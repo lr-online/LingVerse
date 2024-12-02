@@ -38,7 +38,8 @@ class MongoBaseModel(PydanticBaseModel):
 
     # 自动创建表
     @classmethod
-    async def create_collection(cls):
+    async def create_indexes(cls):
+        """创建索引"""
         await cls.collection().create_index("created_at")
         await cls.collection().create_index("updated_at")
         await cls.collection().create_index("is_deleted")
@@ -57,7 +58,7 @@ class MongoBaseModel(PydanticBaseModel):
         try:
             # 确保更新时间戳
             new_record = cls(**kwargs)
-            record_id = await cls.collection().insert_one(new_record.model_dump())
+            record_id = await cls.collection().insert_one(new_record.model_dump(exclude={"id"}))
             new_record.id = str(record_id.inserted_id)
 
             logger.debug(f"Created document in {cls.collection_name()}: {record_id}")
@@ -90,7 +91,7 @@ class MongoBaseModel(PydanticBaseModel):
             raise
 
     @classmethod
-    async def get_by_field(cls: Type[T], field: str, value: Any) -> Optional[T]:
+    async def get_by_single_field(cls: Type[T], field: str, value: Any) -> Optional[T]:
         """
         通过指定字段获取文档
 
@@ -103,6 +104,29 @@ class MongoBaseModel(PydanticBaseModel):
         """
         try:
             doc = await cls.collection().find_one({field: value, "is_deleted": False})
+            if doc:
+                doc["_id"] = str(doc["_id"])
+                return cls(**doc)
+            return None
+        except Exception as e:
+            logger.error(
+                f"Failed to get document by field from {cls.collection_name()}: {e}"
+            )
+            raise
+
+    @classmethod
+    async def get_by_multi_field(cls: Type[T], filter_dict: Dict[str, Any]) -> Optional[T]:
+        """
+        通过多个字段获取文档
+
+        Args:
+            filter_dict: 字段名和字段值的字典
+
+        Returns:
+            Optional[T]: 文档对象,不存在则返回None
+        """
+        try:
+            doc = await cls.collection().find_one(filter_dict)
             if doc:
                 doc["_id"] = str(doc["_id"])
                 return cls(**doc)
@@ -158,9 +182,10 @@ class MongoBaseModel(PydanticBaseModel):
             filter_dict["is_deleted"] = False
             data["updated_at"] = get_china_now()
             result = await cls.collection().update_one(filter_dict, {"$set": data})
+            logger.debug(f"Updated document by field in {cls.collection_name()}: {filter_dict}")
             return result.modified_count > 0
         except Exception as e:
-            logger.error(f"Failed to update document by field in {cls.__name__}: {e}")
+            logger.error(f"Failed to update document by field in {cls.collection_name()}: {e}")
             raise
 
     async def delete(self) -> bool:
