@@ -195,11 +195,12 @@ async def create_message(
             status_code=403, detail="You are not a member of this conversation"
         )
 
-    # 验证接收者是否存在且在会话成员中
+    # 验证消息是否是发送给自己
     if current_user.id == payload.receiver_id:
         raise HTTPException(
             status_code=400, detail="You cannot send message to yourself"
         )
+    # 验证接收者是否存在且在会话成员中
     if not await Person.get_by_id(payload.receiver_id):
         raise HTTPException(status_code=404, detail="Receiver not found")
     if payload.receiver_id not in conversation.members:
