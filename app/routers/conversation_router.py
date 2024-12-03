@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -26,6 +26,7 @@ async def list_conversations(
         skip=(page - 1) * limit,
         limit=limit,
     )
+    # TODO: 这里得按最后一条消息的时间降序排列
     return ResponseModel(
         success=True,
         data=[
@@ -110,6 +111,8 @@ class UpdateMembersPayload(BaseModel):
     member_id: str = Field(..., description="成员ID")
 
 
+
+
 @router.post("/{conversation_id}/members", response_model=ResponseModel)
 async def add_conversation_member(conversation_id: str, payload: UpdateMembersPayload):
     """添加会话成员"""
@@ -164,3 +167,57 @@ async def delete_conversation(conversation_id: str):
         data={"id": conversation_id},
         message="Conversation deleted successfully",
     )
+
+
+class CreateMessagePayload(BaseModel):
+    receiver_id: str = Field(..., description="接收者ID")
+    message_type: Literal["text", "image", "video", "file"] = Field(..., description="消息类型")
+    content: Optional[str] = Field(None, description="消息内容")
+    media_url: Optional[str] = Field(None, description="媒体链接")
+    metadata: Optional[dict] = Field(None, description="元数据")
+
+
+@router.put("/{conversation_id}/messages", response_model=ResponseModel)
+async def create_message(
+    conversation_id: str,
+    payload: CreateMessagePayload,
+    current_user: CurrentUser
+):
+    """向会话发送新消息"""
+    # 验证会话是否存在
+    conversation = await Conversation.get_by_id(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    # 验证发送者是否在会话成员中
+    if current_user.id not in conversation.members:
+        raise HTTPException(status_code=403, detail="You are not a member of this conversation")
+    
+    # 验证接收者是否存在且在会话成员中
+    if current_user.id == payload.receiver_id:
+        raise HTTPException(status_code=400, detail="You cannot send message to yourself")
+    if not await Person.get_by_id(payload.receiver_id):
+        raise HTTPException(status_code=404, detail="Receiver not found")
+    if payload.receiver_id not in conversation.members:
+        raise HTTPException(status_code=400, detail="Receiver is not a member of this conversation")
+    
+    # 创建新消息
+    message_data = {
+        "conversation_id": conversation_id,
+        "sender_id": current_user.id,
+        "receiver_id": payload.receiver_id,
+        "message_type": payload.message_type,
+        "content": payload.content,
+        "media_url": payload.media_url,
+        "metadata": payload.metadata,
+    }
+    
+    try:
+        new_message = await Message.create(**message_data)
+        return ResponseModel(
+            success=True,
+            data=new_message.model_dump(by_alias=False),
+            message="Message sent successfully"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send message: {str(e)}")
