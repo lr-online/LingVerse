@@ -34,7 +34,7 @@ async def test_get_conversation(client: TestClient, user_token: str):
     """测试获取单个会话"""
     # 先创建一个会话
     conversation_id = await test_create_conversation(client, user_token)
-    
+
     response = client.get(
         f"/api/conversations/{conversation_id}",
         headers={"Authorization": user_token},
@@ -49,7 +49,7 @@ async def test_update_conversation(client: TestClient, user_token: str):
     """测试更新会话"""
     # 先创建一个会话
     conversation_id = await test_create_conversation(client, user_token)
-    
+
     response = client.put(
         f"/api/conversations/{conversation_id}",
         headers={"Authorization": user_token},
@@ -64,11 +64,11 @@ async def test_delete_conversation(client: TestClient, user_token: str):
     """测试删除会话"""
     # 先创建一个会话
     conversation_id = await test_create_conversation(client, user_token)
-    
+
     response = client.delete(
         f"/api/conversations/{conversation_id}",
         headers={"Authorization": user_token},
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["success"] is True 
+    assert data["success"] is True

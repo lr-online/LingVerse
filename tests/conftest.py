@@ -1,7 +1,8 @@
 import asyncio
+from typing import AsyncGenerator, Generator
+
 import pytest
 from fastapi.testclient import TestClient
-from typing import AsyncGenerator, Generator
 
 from app.main import app
 from app.models.person import Person
@@ -43,4 +44,4 @@ async def user_token() -> AsyncGenerator[str, None]:
         access_token="user_test_token",
     )
     yield user.access_token
-    await Person.delete_by_id(user.id) 
+    await Person.delete_by_id(user.id)

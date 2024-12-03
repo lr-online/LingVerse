@@ -14,14 +14,17 @@ router = APIRouter()
 
 
 @router.get("", response_model=ResponseModel)
-async def list_conversations(current_user: CurrentUser, page: int = 1, limit: int = 100):
+async def list_conversations(
+    current_user: CurrentUser, page: int = 1, limit: int = 100
+):
     """获取所有会话"""
     conversations = await Conversation.list(
         filter_dict={
             "members": current_user.id,
             "is_deleted": False,
         },
-        skip=(page - 1) * limit, limit=limit
+        skip=(page - 1) * limit,
+        limit=limit,
     )
     return ResponseModel(
         success=True,
@@ -65,7 +68,9 @@ class CreateConversationPayload(BaseModel):
 
 
 @router.post("", response_model=ResponseModel)
-async def create_conversation(payload: CreateConversationPayload, current_user: CurrentUser):
+async def create_conversation(
+    payload: CreateConversationPayload, current_user: CurrentUser
+):
     """创建会话"""
     payload.members.add(current_user.id)
 
@@ -83,21 +88,71 @@ async def create_conversation(payload: CreateConversationPayload, current_user: 
     )
 
 
-@router.put("/{conversation_id}", response_model=ResponseModel)
-async def update_conversation(conversation_id: str, payload: Conversation):
-    """更新会话信息"""
+class RenameConversationPayload(BaseModel):
+    name: str = Field(..., description="新的会话名称")
+
+
+@router.put("/{conversation_id}/name", response_model=ResponseModel)
+async def rename_conversation(conversation_id: str, payload: RenameConversationPayload):
+    """重命名会话"""
     try:
         success = await Conversation.update_by_id(
-            id=conversation_id,
-            data=payload.model_dump(
-                exclude={"id", "created_at", "updated_at", "is_deleted"}
-            ),
+            id=conversation_id, data={"name": payload.name}
         )
-        message = "Conversation updated successfully"
+        message = "Conversation renamed successfully"
     except Exception as e:
         success = False
         message = str(e)
     return ResponseModel(success=success, data={}, message=message)
+
+
+class UpdateMembersPayload(BaseModel):
+    member_id: str = Field(..., description="成员ID")
+
+
+@router.post("/{conversation_id}/members", response_model=ResponseModel)
+async def add_conversation_member(conversation_id: str, payload: UpdateMembersPayload):
+    """添加会话成员"""
+    conversation = await Conversation.get_by_id(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # 检查成员是否存在
+    if not await Person.get_by_id(payload.member_id):
+        raise HTTPException(
+            status_code=404, detail=f"Member {payload.member_id} not found"
+        )
+
+    members = set(conversation.members)
+    members.add(payload.member_id)
+
+    success = await Conversation.update_by_id(
+        id=conversation_id, data={"members": list(members)}
+    )
+    return ResponseModel(success=success, data={}, message="Member added successfully")
+
+
+@router.delete("/{conversation_id}/members/{member_id}", response_model=ResponseModel)
+async def remove_conversation_member(conversation_id: str, member_id: str):
+    """移除会话成员"""
+    conversation = await Conversation.get_by_id(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    members = set(conversation.members)
+    if member_id not in members:
+        raise HTTPException(status_code=404, detail="Member not in conversation")
+
+    members.remove(member_id)
+    if len(members) < 1:
+        raise HTTPException(status_code=400, detail="Cannot remove last member")
+
+    success = await Conversation.update_by_id(
+        id=conversation_id, data={"members": list(members)}
+    )
+    return ResponseModel(
+        success=success, data={}, message="Member removed successfully"
+    )
 
 
 @router.delete("/{conversation_id}", response_model=ResponseModel)

@@ -45,4 +45,4 @@ async def test_sync_llm_models(client: TestClient, admin_token: str, user_token:
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["success"] is True 
+    assert data["success"] is True
