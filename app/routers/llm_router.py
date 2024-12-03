@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path
 from openai import AsyncOpenAI
 
+from app.dependencies.auth import AdminUser
 from app.models.llm_model import LLM
 from app.utils.api_response import ResponseModel
 from app.utils.logger import get_logger
@@ -18,7 +19,7 @@ async def list_llm():
         success=True,
         data=[
             model.model_dump(
-                exclude={"api_key", "base_url"},
+                exclude={"api_key", "base_url", "is_deleted"},
                 by_alias=False,
             )
             for model in all_llm
@@ -44,14 +45,16 @@ async def get_llm(llm_name: str = Path(..., description="大语言模型名称")
 
 
 @router.post("/sync", response_model=ResponseModel)
-async def sync_llm_models():
+async def sync_llm_models(current_user: AdminUser):
     """同步大语言模型列表"""
-    logger.info("Starting LLM models synchronization")
+    logger.info(f"User {current_user.name} starting LLM models synchronization")
     oai_client = AsyncOpenAI()
 
     try:
         model_list = await oai_client.models.list()
-        logger.info(f"Retrieved {len(model_list.data)} models from OpenAI")
+        logger.info(
+            f"User {current_user.name} retrieved {len(model_list.data)} models from OpenAI"
+        )
 
         for model in model_list.data:
             await LLM.create(
@@ -60,13 +63,13 @@ async def sync_llm_models():
                 api_key=oai_client.api_key,
                 base_url=str(oai_client.base_url),
             )
-            logger.debug(f"Created/Updated model: {model.id}")
+            logger.debug(f"User {current_user.name} created/updated model: {model.id}")
 
         latest_model_list = [model.id for model in model_list.data]
         await LLM.update_by_field(
             {"model_name": {"$nin": latest_model_list}}, {"is_deleted": True}
         )
-        logger.info("LLM models synchronization completed")
+        logger.info(f"User {current_user.name} LLM models synchronization completed")
 
         return ResponseModel(
             success=True,
@@ -74,5 +77,5 @@ async def sync_llm_models():
             message="LLM models synchronized successfully",
         )
     except Exception as e:
-        logger.error(f"Failed to sync LLM models: {str(e)}")
+        logger.error(f"User {current_user.name} failed to sync LLM models: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

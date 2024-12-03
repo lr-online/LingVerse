@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
+from app.dependencies.auth import CurrentUser
 from app.models.conversation import Conversation
 from app.models.message import Message
 from app.utils.api_response import ResponseModel
@@ -43,8 +44,9 @@ async def get_conversation(conversation_id: str):
 
 
 @router.post("", response_model=ResponseModel)
-async def create_conversation(payload: Conversation):
+async def create_conversation(payload: Conversation, current_user: CurrentUser):
     """创建会话"""
+    payload.creator_id = current_user.id
     new_conversation = await Conversation.create(**payload.model_dump())
     return ResponseModel(
         success=True,
