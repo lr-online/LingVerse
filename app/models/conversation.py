@@ -12,7 +12,7 @@ class Conversation(MongoBaseModel):
     """Conversation data model"""
 
     name: str = Field("新会话", description="对话名称")
-    members: Optional[list[str]] = Field(None, description="对话成员")
+    members: Optional[list[str]] = Field(None, description="对话成员的ID列表")
 
     class Config:
         json_schema_extra = {
